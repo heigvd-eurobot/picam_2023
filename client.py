@@ -1,42 +1,44 @@
 import socket
 import os
 import sys
-import time 
+import time
 import signal
 from cakeDetector import cakeDetector as cd
 import cv2
+
 
 class PiCam:
     mirador_ip: str
     mirador_port: str
     tcp_socket: socket
     cakeDetector: cd.CakeDetector
-    videoStream: any
 
     def __init__(self):
         self.mirador_ip = os.getenv('MIRADOR_IP')
         self.mirador_port = os.getenv('MIRADOR_PORT')
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cakeDetector = cd.CakeDetector()
-        self.videoStream = cv2.VideoCapture(0)
         self.calibrate_camera()
 
-
     def calibrate_camera(self):
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            print("Cannot open camera")
+            return
         try:
-            # Read a frame from the video stream
-            ret, frame = self.videoStream.read()
+            ret, frame = cap.read()
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.cakeDetector.initDetector(frame)
             print("GOTCHA")
         except Exception as e:
-            print("Unable to init detector",e)
+            print(f"Unable to init detector : {e}")
 
     def connect_to_server(self, host, port):
         '''Connecter le socket au serveur'''
         try:
             self.tcp_socket.connect((host, port))
         except socket.error as e:
-            print("Erreur de connexion : ", e)
+            print(f"Erreur de connexion : {e}")
             sys.exit()
 
     def receive_data(self):
@@ -48,8 +50,14 @@ class PiCam:
         '''Envoyer des données au serveur'''
         self.tcp_socket.send(message.encode())
 
-    def close_connection(self):
+    def close_connection(self, cap):
+        if cap:
+            cap.release()
         self.tcp_socket.close()
+    
+    def watch(self):
+        return self.cakeDetector.detectCakes()
+
 
 def main(args):
 
@@ -61,22 +69,32 @@ def main(args):
     picam.connect_to_server(host, port)
     picam.receive_data()
 
-
-    # Envoyer des données au serveur à une fréquence définie
-    message = "Hello server, this is client !"
     frequency = 1  # envoi du message toutes les secondes
+  
+    signal.signal(signal.SIGTERM,
+                  lambda signum, frame: picam.close_connection())
 
-    def send_message():
-        picam.send_data(message)
-
-    signal.signal(signal.SIGTERM, lambda signum, frame: picam.close_connection())
-
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Cannot open camera")
+        return
+    
     while True:
+        # Observe le plateau de jeu
         try:
-            send_message()
-            time.sleep(frequency)
+            ret, frame = cap.read()
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            data = picam.watch(frame)
+        except Exception as e:
+            print(f"Unable to watch : {e}")
+            continue
+        time.sleep(frequency)
+
+        # Envoie les données au serveur
+        try:
+            picam.send_data(data)
         except KeyboardInterrupt:
-            picam.close_connection()
+            picam.close_connection(cap)
             break
 
 
