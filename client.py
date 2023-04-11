@@ -7,6 +7,7 @@ from cakeDetector import cakeDetector as cd
 import cv2
 import logging
 import colorlog
+import json
 
 
 class PiCam:
@@ -59,8 +60,16 @@ class PiCam:
         self.tcp_socket.close()
         logger.info("Connection closed")
 
-    def watch(self):
-        return self.cakeDetector.detectCakes()
+    def watch(self, frame):
+        #return self.cakeDetector.detectCakes()
+        return [
+            {
+                "cake": "1"
+            },
+            {
+                "cake": "2"
+            },
+        ]
 
 
 def main(args):
@@ -88,8 +97,8 @@ def main(args):
         try:
             ret, frame = cap.read()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            #data = picam.watch(frame)
-            data = "COCO"
+            data = picam.watch(frame)
+            payload = json.dumps(data)
         except Exception as e:
             logger.error(f"Unable to watch : {e}")
             continue
@@ -97,10 +106,11 @@ def main(args):
 
         # Envoie les données au serveur
         try:
-            picam.send_data(data)
+            picam.send_data(payload)
         except KeyboardInterrupt:
             picam.close_connection(cap)
             break
+
 
 # ______________________________________________________________________________
 #                                   Main
