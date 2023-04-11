@@ -4,3 +4,4 @@ numpy
 matplotlib
 colorlog
 picamera2
+python-dotenv

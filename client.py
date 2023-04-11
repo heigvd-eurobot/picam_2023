@@ -8,7 +8,9 @@ import cv2
 import logging
 import colorlog
 import json
-from picamera2 import PiCamera2
+from picamera2 import Picamera2
+from dotenv import load_dotenv
+
 
 
 
@@ -26,19 +28,18 @@ class PiCam:
         self.calibrate_camera()
 
     def calibrate_camera(self):
-        # cap = cv2.VideoCapture(0)
-        # if not cap.isOpened():
-        #     logger.error("Cannot open camera")
-        #     return
-        picam2 = PiCamera2()
-        config = picam2.create_preview_configuration(format='RGB888')
+        picam2 = Picamera2()
+        config = picam2.create_preview_configuration()
         picam2.configure(config)
-        if not picam2.start_preview():
-            logger.error("Cannot start preview")
+        try:
+            picam2.start()
+        except Exception as e:         
+            logger.error(f"{e}")
             return
 
         try:
-            ret, frame = cap.read()
+            #ret, frame = cap.read()
+            frame = picam2.capture_array()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.cakeDetector.initDetector(frame)
             logger.info("Cake Detector Initialized successfully")
@@ -82,10 +83,12 @@ class PiCam:
 
 
 def main(args):
+    load_dotenv()
+
 
     # Définir l'adresse IP et le port du serveur
-    host = "127.0.0.1"  # Adresse IP locale
-    port = 8080  # Port arbitraire
+    host = os.getenv('MIRADOR_IP') # Adresse IP locale
+    port = os.getenv('MIRADOR_PORT') # Port arbitraire
 
     picam = PiCam()
     picam.connect_to_server(host, port)
