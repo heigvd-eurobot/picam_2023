@@ -13,14 +13,10 @@ from dotenv import load_dotenv
 
 
 class PiCam:
-    mirador_ip: str
-    mirador_port: str
     tcp_socket: socket
     cakeDetector: cd.CakeDetector
 
     def __init__(self):
-        self.mirador_ip = os.getenv("MIRADOR_IP")
-        self.mirador_port = os.getenv("MIRADOR_PORT")
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cakeDetector = cd.CakeDetector()
 
