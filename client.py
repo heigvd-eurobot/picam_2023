@@ -5,6 +5,8 @@ import time
 import signal
 from cakeDetector import cakeDetector as cd
 import cv2
+import logging
+import colorlog
 
 
 class PiCam:
@@ -23,38 +25,40 @@ class PiCam:
     def calibrate_camera(self):
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
-            print("Cannot open camera")
+            logger.error("Cannot open camera")
             return
         try:
             ret, frame = cap.read()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.cakeDetector.initDetector(frame)
-            print("GOTCHA")
+            logger.info("Cake Detector Initialized successfully")
         except Exception as e:
-            print(f"Unable to init detector : {e}")
+            logger.error(f"Unable to init detector : {e}")
 
     def connect_to_server(self, host, port):
         '''Connecter le socket au serveur'''
         try:
             self.tcp_socket.connect((host, port))
         except socket.error as e:
-            print(f"Erreur de connexion : {e}")
+            logger.error(f"Erreur de connexion : {e}")
             sys.exit()
 
     def receive_data(self):
         '''Recevoir des données du serveur'''
         data = self.tcp_socket.recv(1024).decode()
-        print("Données reçues du serveur : ", data)
+        logger.info(f"Données reçues du serveur : {data}")
 
     def send_data(self, message):
         '''Envoyer des données au serveur'''
         self.tcp_socket.send(message.encode())
+        logger.debug("Données envoyées au serveur")
 
     def close_connection(self, cap):
         if cap:
             cap.release()
         self.tcp_socket.close()
-    
+        logger.info("Connection closed")
+
     def watch(self):
         return self.cakeDetector.detectCakes()
 
@@ -70,23 +74,24 @@ def main(args):
     picam.receive_data()
 
     frequency = 1  # envoi du message toutes les secondes
-  
+
     signal.signal(signal.SIGTERM,
                   lambda signum, frame: picam.close_connection())
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        print("Cannot open camera")
+        logger.critical("Cannot open camera")
         return
-    
+
     while True:
         # Observe le plateau de jeu
         try:
             ret, frame = cap.read()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            data = picam.watch(frame)
+            #data = picam.watch(frame)
+            data = "COCO"
         except Exception as e:
-            print(f"Unable to watch : {e}")
+            logger.error(f"Unable to watch : {e}")
             continue
         time.sleep(frequency)
 
@@ -99,4 +104,23 @@ def main(args):
 
 
 if __name__ == "__main__":
+    # configure logger
+    handler = colorlog.StreamHandler()
+    formatter = colorlog.ColoredFormatter(
+        "%(log_color)s%(levelname)-8s%(reset)s %(blue)s%(message)s",
+        datefmt=None,
+        reset=True,
+        log_colors={
+            'DEBUG': 'cyan',
+            'INFO': 'green',
+            'WARNING': 'yellow',
+            'ERROR': 'red',
+            'CRITICAL': 'red,bg_white',
+        },
+        secondary_log_colors={},
+        style='%')
+    handler.setFormatter(formatter)
+    logger = colorlog.getLogger(__name__)
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
     main(sys.argv)
