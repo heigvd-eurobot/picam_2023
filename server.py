@@ -2,12 +2,14 @@ import socket
 from _thread import *
 import logging
 import colorlog
+import os
+from dotenv import load_dotenv
 
-host = '127.0.0.1'
-port = 8080
 
 def client_handler(connection):
-    connection.send(str.encode('You are now connected to the replay server... Type BYE to stop'))
+    connection.send(
+        str.encode(
+            'You are now connected to the replay server... Type BYE to stop'))
     client_info = connection.getpeername()
     while True:
         try:
@@ -24,16 +26,24 @@ def client_handler(connection):
             break
     connection.close()
 
+
 def accept_connections(ServerSocket):
     client, address = ServerSocket.accept()
     logger.info('Connected to: ' + address[0] + ':' + str(address[1]))
     start_new_thread(client_handler, (client, ))
+
 
 # ______________________________________________________________________________
 #                                   Main
 # ______________________________________________________________________________
 
 if __name__ == '__main__':
+    load_dotenv()
+
+    # Définir l'adresse IP et le port du serveur
+    host = os.getenv('MIRADOR_IP')  # Adresse IP locale
+    port = os.getenv('MIRADOR_PORT')  # Port arbitraire
+
     # configure logger
     handler = colorlog.StreamHandler()
     formatter = colorlog.ColoredFormatter(

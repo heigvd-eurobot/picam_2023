@@ -12,8 +12,6 @@ from picamera2 import Picamera2
 from dotenv import load_dotenv
 
 
-
-
 class PiCam:
     mirador_ip: str
     mirador_port: str
@@ -33,7 +31,7 @@ class PiCam:
         picam2.configure(config)
         try:
             picam2.start()
-        except Exception as e:         
+        except Exception as e:
             logger.error(f"{e}")
             return
 
@@ -85,10 +83,9 @@ class PiCam:
 def main(args):
     load_dotenv()
 
-
     # Définir l'adresse IP et le port du serveur
-    host = os.getenv('MIRADOR_IP') # Adresse IP locale
-    port = os.getenv('MIRADOR_PORT') # Port arbitraire
+    host = os.getenv('MIRADOR_IP')  # Adresse IP locale
+    port = os.getenv('MIRADOR_PORT')  # Port arbitraire
 
     picam = PiCam()
     picam.connect_to_server(host, port)
