@@ -26,17 +26,10 @@ class PiCam:
 
     def calibrate_camera(self, camera):
         try:
-            camera.start()
-        except Exception as e:
-            logger.error(f"{e}")
-            return
-
-        try:
             # ret, frame = cap.read()
             frame = camera.capture_array()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.cakeDetector.initDetector(frame)
-            camera.close()
             logger.info("Cake Detector Initialized successfully")
         except Exception as e:
             logger.error(f"Unable to init detector : {e}")
@@ -56,8 +49,11 @@ class PiCam:
 
     def send_data(self, message):
         """Envoyer des données au serveur"""
-        self.tcp_socket.send(message.encode())
-        logger.debug("Données envoyées au serveur")
+        try:
+            self.tcp_socket.send(message.encode())
+            logger.debug("Données envoyées au serveur")
+        except Exception as e:
+            logger.error(f"{e}")
 
     def close_connection(self):
         self.tcp_socket.close()
@@ -109,10 +105,12 @@ def main(args):
         # Envoie les données au serveur
         try:
             picam.send_data(payload)
+
         except KeyboardInterrupt:
             camera.close()
             picam.close_connection()
             break
+
 
 
 # ______________________________________________________________________________
