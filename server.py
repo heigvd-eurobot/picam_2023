@@ -1,5 +1,7 @@
 import socket
 from _thread import *
+import logging
+import colorlog
 
 host = '127.0.0.1'
 port = 8080
@@ -14,17 +16,17 @@ def client_handler(connection):
             if message == 'BYE':
                 break
             else:
-                print(f'Client: {message}')
+                logger.debug(f'Client: {message}')
             reply = f'Server: {message}'
             connection.sendall(str.encode(reply))
         except:
-            print(f"Client disconnected {client_info}")
+            logger.error(f"Client disconnected {client_info}")
             break
     connection.close()
 
 def accept_connections(ServerSocket):
     client, address = ServerSocket.accept()
-    print('Connected to: ' + address[0] + ':' + str(address[1]))
+    logger.info('Connected to: ' + address[0] + ':' + str(address[1]))
     start_new_thread(client_handler, (client, ))
 
 # ______________________________________________________________________________
@@ -32,12 +34,32 @@ def accept_connections(ServerSocket):
 # ______________________________________________________________________________
 
 if __name__ == '__main__':
+    # configure logger
+    handler = colorlog.StreamHandler()
+    formatter = colorlog.ColoredFormatter(
+        "%(log_color)s%(levelname)-8s%(reset)s %(blue)s%(message)s",
+        datefmt=None,
+        reset=True,
+        log_colors={
+            'DEBUG': 'cyan',
+            'INFO': 'green',
+            'WARNING': 'yellow',
+            'ERROR': 'red',
+            'CRITICAL': 'red,bg_white',
+        },
+        secondary_log_colors={},
+        style='%')
+    handler.setFormatter(formatter)
+    logger = colorlog.getLogger(__name__)
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+
     ServerSocket = socket.socket()
     try:
         ServerSocket.bind((host, port))
     except socket.error as e:
         print(str(e))
-    print(f'Server is listing on the port {port}...')
+    logger.info(f'Server is listing on the port {port}...')
     ServerSocket.listen()
 
     while True:
