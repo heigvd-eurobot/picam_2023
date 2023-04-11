@@ -49,7 +49,7 @@ class PiCam:
         try:
             self.tcp_socket.connect((host, port))
         except socket.error as e:
-            logger.error(f"Erreur de connexion : {e}")
+            logger.error(f"Erreur de connexion à {host} sur le port {port} : {e}")
             sys.exit()
 
     def receive_data(self):
