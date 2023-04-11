@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     # Définir l'adresse IP et le port du serveur
     host = os.getenv('MIRADOR_IP')  # Adresse IP locale
-    port = os.getenv('MIRADOR_PORT')  # Port arbitraire
+    port = int(os.getenv('MIRADOR_PORT'))  # Port arbitraire
 
     # configure logger
     handler = colorlog.StreamHandler()

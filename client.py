@@ -85,7 +85,7 @@ def main(args):
 
     # Définir l'adresse IP et le port du serveur
     host = os.getenv('MIRADOR_IP')  # Adresse IP locale
-    port = os.getenv('MIRADOR_PORT')  # Port arbitraire
+    port = int(os.getenv('MIRADOR_PORT'))  # Port arbitraire
 
     picam = PiCam()
     picam.connect_to_server(host, port)
