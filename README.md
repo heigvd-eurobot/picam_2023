@@ -8,6 +8,7 @@ Ce repository contient le code de détection des gâteaux. Ce fichier est fait p
 2. Clone le repository avec `git clone https://github.com/heigvd-eurobot/picam_2023.git`
 3. Se déplacer dans le dossier avec `cd picam_2023`
 4. Installer les dépendances avec `pip install -r requirements.txt`
+5. Installer libcamera 2 avec `sudo apt install -y python3-picamera2 --no-install-recommends`
 
 
 ```mermaid
@@ -27,3 +28,8 @@ flowchart TD
 - le dossier cakeDetector contient le code de détection des gâteaux.
 - le dossier cakeExtractor contient le code qui permet d'extraire un crop des gâteaux.
 - le dossier cakeSorter contient le code qui permet de classifier les gâteaux.
+
+
+## Documentation
+
+https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf

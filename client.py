@@ -8,6 +8,8 @@ import cv2
 import logging
 import colorlog
 import json
+from picamera2 import PiCamera2
+
 
 
 class PiCam:
@@ -24,10 +26,17 @@ class PiCam:
         self.calibrate_camera()
 
     def calibrate_camera(self):
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            logger.error("Cannot open camera")
+        # cap = cv2.VideoCapture(0)
+        # if not cap.isOpened():
+        #     logger.error("Cannot open camera")
+        #     return
+        picam2 = PiCamera2()
+        config = picam2.create_preview_configuration(format='RGB888')
+        picam2.configure(config)
+        if not picam2.start_preview():
+            logger.error("Cannot start preview")
             return
+
         try:
             ret, frame = cap.read()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
