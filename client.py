@@ -19,33 +19,30 @@ class PiCam:
     cakeDetector: cd.CakeDetector
 
     def __init__(self):
-        self.mirador_ip = os.getenv('MIRADOR_IP')
-        self.mirador_port = os.getenv('MIRADOR_PORT')
+        self.mirador_ip = os.getenv("MIRADOR_IP")
+        self.mirador_port = os.getenv("MIRADOR_PORT")
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cakeDetector = cd.CakeDetector()
-        self.calibrate_camera()
 
-    def calibrate_camera(self):
-        picam2 = Picamera2()
-        config = picam2.create_preview_configuration()
-        picam2.configure(config)
+    def calibrate_camera(self, camera):
         try:
-            picam2.start()
+            camera.start()
         except Exception as e:
             logger.error(f"{e}")
             return
 
         try:
-            #ret, frame = cap.read()
-            frame = picam2.capture_array()
+            # ret, frame = cap.read()
+            frame = camera.capture_array()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.cakeDetector.initDetector(frame)
+            camera.close()
             logger.info("Cake Detector Initialized successfully")
         except Exception as e:
             logger.error(f"Unable to init detector : {e}")
 
     def connect_to_server(self, host, port):
-        '''Connecter le socket au serveur'''
+        """Connecter le socket au serveur"""
         try:
             self.tcp_socket.connect((host, port))
         except socket.error as e:
@@ -53,59 +50,55 @@ class PiCam:
             sys.exit()
 
     def receive_data(self):
-        '''Recevoir des données du serveur'''
+        """Recevoir des données du serveur"""
         data = self.tcp_socket.recv(1024).decode()
         logger.info(f"Données reçues du serveur : {data}")
 
     def send_data(self, message):
-        '''Envoyer des données au serveur'''
+        """Envoyer des données au serveur"""
         self.tcp_socket.send(message.encode())
         logger.debug("Données envoyées au serveur")
 
-    def close_connection(self, cap):
-        if cap:
-            cap.release()
+    def close_connection(self):
         self.tcp_socket.close()
         logger.info("Connection closed")
 
     def watch(self, frame):
-        #return self.cakeDetector.detectCakes()
+        # return self.cakeDetector.detectCakes()
         return [
-            {
-                "cake": "1"
-            },
-            {
-                "cake": "2"
-            },
+            {"cake": "1"},
+            {"cake": "2"},
         ]
 
 
 def main(args):
     load_dotenv()
+    host = os.getenv("MIRADOR_IP")  # Adresse IP locale
+    port = int(os.getenv("MIRADOR_PORT"))  # Port arbitraire
 
-    # Définir l'adresse IP et le port du serveur
-    host = os.getenv('MIRADOR_IP')  # Adresse IP locale
-    port = int(os.getenv('MIRADOR_PORT'))  # Port arbitraire
-
+    # Configuration de la camera
+    camera = Picamera2()
+    config = camera.create_preview_configuration()
+    camera.configure(config)
+    try:
+        camera.start()
+    except Exception as e:
+        logger.critical(f"Cannot open camera {e}")
+        return
+    
+    # Lancement du client
     picam = PiCam()
     picam.connect_to_server(host, port)
     picam.receive_data()
-
     frequency = 1  # envoi du message toutes les secondes
+    signal.signal(signal.SIGTERM, lambda signum, frame: picam.close_connection())
+    picam.calibrate_camera(camera)
 
-    signal.signal(signal.SIGTERM,
-                  lambda signum, frame: picam.close_connection())
-
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        logger.critical("Cannot open camera")
-        return
-
+    # Observe le plateau de jeu
     while True:
-        # Observe le plateau de jeu
         try:
-            ret, frame = cap.read()
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = camera.capture_array()
+            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             data = picam.watch(frame)
             payload = json.dumps(data)
         except Exception as e:
@@ -117,7 +110,8 @@ def main(args):
         try:
             picam.send_data(payload)
         except KeyboardInterrupt:
-            picam.close_connection(cap)
+            camera.close()
+            picam.close_connection()
             break
 
 
@@ -133,14 +127,15 @@ if __name__ == "__main__":
         datefmt=None,
         reset=True,
         log_colors={
-            'DEBUG': 'cyan',
-            'INFO': 'green',
-            'WARNING': 'yellow',
-            'ERROR': 'red',
-            'CRITICAL': 'red,bg_white',
+            "DEBUG": "cyan",
+            "INFO": "green",
+            "WARNING": "yellow",
+            "ERROR": "red",
+            "CRITICAL": "red,bg_white",
         },
         secondary_log_colors={},
-        style='%')
+        style="%",
+    )
     handler.setFormatter(formatter)
     logger = colorlog.getLogger(__name__)
     logger.addHandler(handler)
