@@ -7,7 +7,6 @@ import cv2
 from cv2 import aruco
 from skimage import color, measure, morphology, feature, filters
 
-
 class CakeDetector:
     """
     Class for detecting cake on table
@@ -78,93 +77,103 @@ class CakeDetector:
             frame used for calibration
 
         """
-        self.initialized = True
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Aruco detection
-        dictionary = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
-        parameters = aruco.DetectorParameters()
-        detector = aruco.ArucoDetector(dictionary, parameters)
-        markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(grayFrame)
-
-        # Subpixel refinement
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.0001)
-        for corner in markerCorners:
-            cv2.cornerSubPix(
-                grayFrame, corner, winSize=(3, 3), zeroZone=(-1, -1), criteria=criteria
+        try:
+            dictionary = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
+            parameters = aruco.DetectorParameters()
+            detector = aruco.ArucoDetector(dictionary, parameters)
+            markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(
+                grayFrame
             )
 
-        # Draw detected markers
-        ar = np.array(markerCorners)
+            # Subpixel refinement
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.0001)
+            for corner in markerCorners:
+                cv2.cornerSubPix(
+                    grayFrame,
+                    corner,
+                    winSize=(3, 3),
+                    zeroZone=(-1, -1),
+                    criteria=criteria,
+                )
 
-        # Corner extern of referenc arucoTag
-        a0 = ar[markerIds == 20, 0, 0]
-        a1 = ar[markerIds == 20, 0, 1]
-        b0 = ar[markerIds == 21, 1, 0]
-        b1 = ar[markerIds == 21, 1, 1]
-        c0 = ar[markerIds == 22, 3, 0]
-        c1 = ar[markerIds == 22, 3, 1]
-        d0 = ar[markerIds == 23, 2, 0]
-        d1 = ar[markerIds == 23, 2, 1]
+            # Draw detected markers
+            ar = np.array(markerCorners)
 
-        # Perspective transformation
-        pts1 = np.float32([[a0, a1], [b0, b1], [c0, c1], [d0, d1]])
-        pts2 = np.float32(
-            [
-                [1480 * self.f, (2475 + self.offset_x) * self.f],
-                [520 * self.f, (2475 + self.offset_x) * self.f],
-                [1480 * self.f, (525 + self.offset_x) * self.f],
-                [520 * self.f, (525 + self.offset_x) * self.f],
-            ]
-        )
+            # Corner extern of referenc arucoTag
+            a0 = ar[markerIds == 20, 0, 0]
+            a1 = ar[markerIds == 20, 0, 1]
+            b0 = ar[markerIds == 21, 1, 0]
+            b1 = ar[markerIds == 21, 1, 1]
+            c0 = ar[markerIds == 22, 3, 0]
+            c1 = ar[markerIds == 22, 3, 1]
+            d0 = ar[markerIds == 23, 2, 0]
+            d1 = ar[markerIds == 23, 2, 1]
 
-        matrix = cv2.getPerspectiveTransform(pts1, pts2)
-        frame = cv2.warpPerspective(
-            frame, matrix, (int(2000 * self.f), int(3100 * self.f))
-        )
-
-        # split image 3x2
-        splitx = 3
-        splity = 2
-        marge = 200
-
-        (w, h, p) = frame.shape
-        offsetx = int(w / splitx)
-        offsety = int(h / splity)
-
-        # Aruco detection
-        dictionary = aruco.getPredefinedDictionary(aruco.DICT_4X4_250)
-        parameters = aruco.DetectorParameters()
-        detector = aruco.ArucoDetector(dictionary, parameters)
-
-        pos = []
-        for i in range(splitx):
-            for j in range(splity):
-                cutframe = frame[
-                    i * offsetx : min((i + 1) * offsetx + marge, w),
-                    j * offsety : min((j + 1) * offsety + marge, h),
-                    :,
+            # Perspective transformation
+            pts1 = np.float32([[a0, a1], [b0, b1], [c0, c1], [d0, d1]])
+            pts2 = np.float32(
+                [
+                    [1480 * self.f, (2475 + self.offset_x) * self.f],
+                    [520 * self.f, (2475 + self.offset_x) * self.f],
+                    [1480 * self.f, (525 + self.offset_x) * self.f],
+                    [520 * self.f, (525 + self.offset_x) * self.f],
                 ]
-                try:
-                    (
-                        markerCorners,
-                        markerIds,
-                        rejectedCandidates,
-                    ) = detector.detectMarkers(cutframe)
-                    for k in range(len(markerIds)):
-                        c = markerCorners[k][0]
-                        pos.append(
-                            [
-                                markerIds[k, 0],
-                                c[:, 0].mean() + j * offsety,
-                                c[:, 1].mean() + i * offsetx,
-                            ]
-                        )
-                except:
-                    print(f"no marker found at {i} {j}")
-                    pass
-        self.warpMatrix = matrix
+            )
+
+            matrix = cv2.getPerspectiveTransform(pts1, pts2)
+            frame = cv2.warpPerspective(
+                frame, matrix, (int(2000 * self.f), int(3100 * self.f))
+            )
+
+            # split image 3x2
+            splitx = 3
+            splity = 2
+            marge = 200
+
+            (w, h, p) = frame.shape
+            offsetx = int(w / splitx)
+            offsety = int(h / splity)
+
+            # Aruco detection
+            dictionary = aruco.getPredefinedDictionary(aruco.DICT_4X4_250)
+            parameters = aruco.DetectorParameters()
+            detector = aruco.ArucoDetector(dictionary, parameters)
+
+            pos = []
+            for i in range(splitx):
+                for j in range(splity):
+                    cutframe = frame[
+                        i * offsetx : min((i + 1) * offsetx + marge, w),
+                        j * offsety : min((j + 1) * offsety + marge, h),
+                        :,
+                    ]
+                    try:
+                        (
+                            markerCorners,
+                            markerIds,
+                            rejectedCandidates,
+                        ) = detector.detectMarkers(cutframe)
+                        for k in range(len(markerIds)):
+                            c = markerCorners[k][0]
+                            pos.append(
+                                [
+                                    markerIds[k, 0],
+                                    c[:, 0].mean() + j * offsety,
+                                    c[:, 1].mean() + i * offsetx,
+                                ]
+                            )
+                    except:
+                        print(f"no marker found at {i} {j}")
+                        pass
+            self.warpMatrix = matrix
+        except Exception as e:
+            print(e)
+            return
+        self.initialized = True
 
     def tresh(self, frame):
         """
@@ -175,6 +184,9 @@ class CakeDetector:
         frame : list
             frame used for tresholding
         """
+        if not self.initialized:
+            return
+
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.warpPerspective(
             frame, self.warpMatrix, (int(2000 * self.f), int(3100 * self.f))
@@ -274,8 +286,10 @@ class CakeDetector:
 
         if self.initialized == False:
             self.initDetector(frame)
-        self.tresh(frame)
-        return self.labeltruc()
+            return
+        else:
+            self.tresh(frame)
+            return self.labeltruc()
 
     def plotfinal(self):
         fig, ax = plt.subplots(figsize=(20, 20))
