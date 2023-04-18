@@ -58,9 +58,31 @@ class PiCam:
     def watch(self, frame):
         # return self.cakeDetector.detectCakes()
         return [
-            {"cake": "1"},
-            {"cake": "2"},
+            {"IM": "1"},
+            {"CANIBALIST": "2"},
         ]
+
+def generate_fake_payload():
+    cakes = [
+        dict(
+            x= 40,
+            y= 30,
+            hasCherry= False,
+            layers= [0,1,2],
+        )
+    ]
+    cherryDispensers = [
+        dict(
+            id= 0,
+            nbCherries= 4,
+        )
+    ]
+    mapElements = dict(
+        cakes=cakes,
+        cherryDispensers=cherryDispensers,
+    )
+    return mapElements
+        
 
 
 def main(args):
@@ -92,6 +114,7 @@ def main(args):
             frame = camera.capture_array()
             #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             data = picam.watch(frame)
+            data = generate_fake_payload()
             payload = json.dumps(data)
         except Exception as e:
             logger.error(f"Unable to watch : {e}")
