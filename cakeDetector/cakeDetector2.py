@@ -93,7 +93,7 @@ class CakeDetector:
 
         # Aruco detection
         # aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
-        # corners, ids, rejectedImgPoints = aruco.detectMarkers(
+        # markerCorners, markerIds, rejectedImgPoints = aruco.detectMarkers(
         #     frame, aruco_dict, parameters=self.parameters
         # )
         dictionary = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
@@ -107,22 +107,22 @@ class CakeDetector:
                 grayFrame, corner, winSize=(3, 3), zeroZone=(-1, -1), criteria=criteria
             )
 
-        frame_markers = aruco.drawDetectedMarkers(frame.copy(), markerCorners, ids)
+        frame_markers = aruco.drawDetectedMarkers(frame.copy(), markerCorners, markerIds)
         """
         plt.figure(figsize=(20,20))
         plt.imshow(frame_markers)
         plt.show()"""
-        imaxis = aruco.drawDetectedMarkers(frame.copy(), markerCorners, ids)
+        imaxis = aruco.drawDetectedMarkers(frame.copy(), markerCorners, markerIds)
         ar = np.array(markerCorners)
         # Corner extern of reference arucoTag
-        a0 = ar[ids == 20, 0, 0]
-        a1 = ar[ids == 20, 0, 1]
-        b0 = ar[ids == 21, 1, 0]
-        b1 = ar[ids == 21, 1, 1]
-        c0 = ar[ids == 22, 3, 0]
-        c1 = ar[ids == 22, 3, 1]
-        d0 = ar[ids == 23, 2, 0]
-        d1 = ar[ids == 23, 2, 1]
+        a0 = ar[markerIds == 20, 0, 0]
+        a1 = ar[markerIds == 20, 0, 1]
+        b0 = ar[markerIds == 21, 1, 0]
+        b1 = ar[markerIds == 21, 1, 1]
+        c0 = ar[markerIds == 22, 3, 0]
+        c1 = ar[markerIds == 22, 3, 1]
+        d0 = ar[markerIds == 23, 2, 0]
+        d1 = ar[markerIds == 23, 2, 1]
 
         # Perspective transformation
         pts1 = np.float32([[a0, a1], [b0, b1], [c0, c1], [d0, d1]])
@@ -189,7 +189,7 @@ class CakeDetector:
                                 c[:, 1].mean() + i * offsetx,
                             ]
                         )
-                        # pos.append([ids[k,0],c[1, 0]+j*offsety,c[1, 1]+i*offsetx])
+                        # pos.append([markerIds[k,0],c[1, 0]+j*offsety,c[1, 1]+i*offsetx])
                 except:
                     print("error")
                     pass
@@ -251,25 +251,25 @@ class CakeDetector:
                     :,
                 ]
                 try:
-                    corners, ids, rejectedImgPoints = aruco.detectMarkers(
+                    markerCorners, markerIds, rejectedImgPoints = aruco.detectMarkers(
                         cutframe, aruco_dict, parameters=self.parameters
                     )
                     frame_markers = aruco.drawDetectedMarkers(
-                        frame.copy(), corners, ids
+                        frame.copy(), markerCorners, markerIds
                     )
-                    for k in range(len(ids)):
-                        c = corners[k][0]
+                    for k in range(len(markerIds)):
+                        c = markerCorners[k][0]
                         pos.append(
                             [
-                                ids[k, 0],
+                                markerIds[k, 0],
                                 c[:, 0].mean() + j * offsety,
                                 c[:, 1].mean() + i * offsetx,
                             ]
                         )
                         pos_corners.append(
-                            [ids[k, 0], c[:, 0] + j * offsety, c[:, 1] + i * offsetx]
+                            [markerIds[k, 0], c[:, 0] + j * offsety, c[:, 1] + i * offsetx]
                         )
-                        # pos.append([ids[k,0],c[1, 0]+j*offsety,c[1, 1]+i*offsetx])
+                        # pos.append([markerIds[k,0],c[1, 0]+j*offsety,c[1, 1]+i*offsetx])
                 except:
                     print("error")
                     pass
