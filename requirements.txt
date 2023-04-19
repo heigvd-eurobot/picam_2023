@@ -5,3 +5,4 @@ matplotlib
 colorlog
 picamera2
 python-dotenv
+imutils

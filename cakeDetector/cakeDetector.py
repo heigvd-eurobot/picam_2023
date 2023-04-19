@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from cv2 import aruco
+import imutils
 from skimage import color, measure, morphology, feature, filters
 
 class CakeDetector:
@@ -47,7 +48,6 @@ class CakeDetector:
     detectCake()
         detect cake on table
     """
-
     def __init__(self):
         """
         Init the class
@@ -55,16 +55,30 @@ class CakeDetector:
         self.resolutionData = [1920, 1080]
         self.size_of_marker = 0.1  # size of arucoTag of table in meter
         self.offset_x = 100  # offset of reconstruct frame in x
+        self.offset_y = 100  # offset of reconstruct frame in x
+        self.table_size_x = 3000 + self.offset_x  # size of table in x
+        self.table_size_y = 2000 + self.offset_y  # size of table in y
+        self.f = 0.25 # factor for resize frame
+
         self.warpMatrix = []
-        self.f = 0.25
         self.pink = []
         self.yellow = []
         self.brown = []
         self.y_pos = []
         self.p_pos = []
         self.b_pos = []
+        self.posCenter = []
+        self.posGround = []
+        self.cakeLayer = []
+        self.frame_x = self.table_size_x * self.f
+        self.frame_y = self.table_size_y * self.f
         self.frame = []
         self.initialized = False
+
+        self.parameters =  aruco.DetectorParameters_create()
+        self.parameters.adaptiveThreshWinSizeMin = 10
+        self.parameters.adaptiveThreshWinSizeMax = 21
+        self.parameters.adaptiveThreshWinSizeStep=1
         pass
 
     def initDetector(self, frame):
@@ -117,14 +131,15 @@ class CakeDetector:
             pts1 = np.float32([[a0, a1], [b0, b1], [c0, c1], [d0, d1]])
             pts2 = np.float32(
                 [
-                    [1480 * self.f, (2475 + self.offset_x) * self.f],
-                    [520 * self.f, (2475 + self.offset_x) * self.f],
-                    [1480 * self.f, (525 + self.offset_x) * self.f],
-                    [520 * self.f, (525 + self.offset_x) * self.f],
+                    [(1480 + 50) * self.f, (2475 + self.offset_x) * self.f],
+                    [(520 + 50) * self.f, (2475 + self.offset_x) * self.f],
+                    [(1480 + 50) * self.f, (525 + self.offset_x) * self.f],
+                    [(520 + 50) * self.f, (525 + self.offset_x) * self.f],
                 ]
             )
 
             matrix = cv2.getPerspectiveTransform(pts1, pts2)
+            self.warpMatrix = matrix
             frame = cv2.warpPerspective(
                 frame, matrix, (int(2000 * self.f), int(3100 * self.f))
             )
@@ -132,7 +147,7 @@ class CakeDetector:
             # split image 3x2
             splitx = 3
             splity = 2
-            marge = 200
+            marge = 100
 
             (w, h, p) = frame.shape
             offsetx = int(w / splitx)
@@ -169,13 +184,12 @@ class CakeDetector:
                     except:
                         print(f"no marker found at {i} {j}")
                         pass
-            self.warpMatrix = matrix
         except Exception as e:
             print(e)
             return
         self.initialized = True
 
-    def tresh(self, frame):
+    def detectAruco(self, frame):
         """
         This method will treshold the frame.
 
@@ -288,7 +302,7 @@ class CakeDetector:
             self.initDetector(frame)
             return
         else:
-            self.tresh(frame)
+            self.detectAruco(frame)
             return self.labeltruc()
 
     def plotfinal(self):
