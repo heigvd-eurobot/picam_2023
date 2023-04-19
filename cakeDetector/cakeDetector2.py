@@ -11,7 +11,7 @@ import pandas as pd
 from scipy import ndimage
 from PIL import Image
 
-from skimage import color,measure,morphology,feature,filters
+from skimage import color, measure, morphology, feature, filters
 import imutils
 
 
@@ -55,6 +55,7 @@ class CakeDetector:
     detectCake()
         detect cake on table
     """
+
     resolutionData = [1920, 1080]
     size_of_marker = 0.1  # size of arucoTag of table in meter
     offset_x = 100  # offset of reconstruct frame in x
@@ -88,26 +89,31 @@ class CakeDetector:
 
     def initDetector(self, frame):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Aruco detection
-        aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
-        corners, ids, rejectedImgPoints = aruco.detectMarkers(
-            frame, aruco_dict, parameters=self.parameters
-        )
+        # aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
+        # corners, ids, rejectedImgPoints = aruco.detectMarkers(
+        #     frame, aruco_dict, parameters=self.parameters
+        # )
+        dictionary = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
+        parameters = aruco.DetectorParameters()
+        detector = aruco.ArucoDetector(dictionary, parameters)
+        markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(grayFrame)
+
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.0001)
-        for corner in corners:
+        for corner in markerCorners:
             cv2.cornerSubPix(
-                gray, corner, winSize=(3, 3), zeroZone=(-1, -1), criteria=criteria
+                grayFrame, corner, winSize=(3, 3), zeroZone=(-1, -1), criteria=criteria
             )
 
-        frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+        frame_markers = aruco.drawDetectedMarkers(frame.copy(), markerCorners, ids)
         """
         plt.figure(figsize=(20,20))
         plt.imshow(frame_markers)
         plt.show()"""
-        imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
-        ar = np.array(corners)
+        imaxis = aruco.drawDetectedMarkers(frame.copy(), markerCorners, ids)
+        ar = np.array(markerCorners)
         # Corner extern of reference arucoTag
         a0 = ar[ids == 20, 0, 0]
         a1 = ar[ids == 20, 0, 1]
@@ -163,17 +169,22 @@ class CakeDetector:
                     :,
                 ]
                 try:
-                    corners, ids, rejectedImgPoints = aruco.detectMarkers(
-                        cutframe, aruco_dict, parameters=self.parameters
-                    )
-                    frame_markers = aruco.drawDetectedMarkers(
-                        frame.copy(), corners, ids
-                    )
-                    for k in range(len(ids)):
-                        c = corners[k][0]
+                    # markerCorners, markerIds, rejectedImgPoints = aruco.detectMarkers(
+                    #     cutframe, aruco_dict, parameters=self.parameters
+                    # )
+                    # frame_markers = aruco.drawDetectedMarkers(
+                    #     frame.copy(), markerCorners, markerIds
+                    # )
+                    (
+                        markerCorners,
+                        markerIds,
+                        rejectedCandidates,
+                    ) = detector.detectMarkers(cutframe)
+                    for k in range(len(markerIds)):
+                        c = markerCorners[k][0]
                         pos.append(
                             [
-                                ids[k, 0],
+                                markerIds[k, 0],
                                 c[:, 0].mean() + j * offsety,
                                 c[:, 1].mean() + i * offsetx,
                             ]
@@ -494,7 +505,7 @@ class CakeDetector:
 
         return [x_pix, y_pix]
 
-    def detectCakes(self,frame):
+    def detectCakes(self, frame):
         self.detectAruco(frame)
         self.determinNumberOfLayer2()
         positions = self.posGround[:, 1:]
