@@ -75,10 +75,10 @@ class CakeDetector:
         self.frame = []
         self.initialized = False
 
-        self.parameters =  aruco.DetectorParameters_create()
-        self.parameters.adaptiveThreshWinSizeMin = 10
-        self.parameters.adaptiveThreshWinSizeMax = 21
-        self.parameters.adaptiveThreshWinSizeStep=1
+        # self.parameters =  aruco.DetectorParameters_create()
+        # self.parameters.adaptiveThreshWinSizeMin = 10
+        # self.parameters.adaptiveThreshWinSizeMax = 21
+        # self.parameters.adaptiveThreshWinSizeStep=1
         pass
 
     def initDetector(self, frame):

@@ -7,8 +7,6 @@ import cv2
 from cv2 import aruco
 import os
 import PIL
-import pandas as pd
-from scipy import ndimage
 from PIL import Image
 
 from skimage import color, measure, morphology, feature, filters
@@ -79,10 +77,10 @@ class CakeDetector:
 
     frame = []
 
-    parameters = aruco.DetectorParameters_create()
-    parameters.adaptiveThreshWinSizeMin = 10
-    parameters.adaptiveThreshWinSizeMax = 21
-    parameters.adaptiveThreshWinSizeStep = 1
+    # parameters = aruco.DetectorParameters_create()
+    # parameters.adaptiveThreshWinSizeMin = 10
+    # parameters.adaptiveThreshWinSizeMax = 21
+    # parameters.adaptiveThreshWinSizeStep = 1
 
     def __init__(self):
         pass
