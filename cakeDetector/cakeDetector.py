@@ -336,8 +336,6 @@ class CakeDetector:
         self.posCenter = pos_center
         return pos_center
 
-        pass
-
     def determinNumberOfLayer(self):
         wide = 100
         height = 100
