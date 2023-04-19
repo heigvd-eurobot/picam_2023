@@ -3,7 +3,7 @@ import os
 import sys
 import time
 import signal
-from cakeDetector import cakeDetector as cd
+from cakeDetector import cakeDetector2 as cd
 import cv2
 import logging
 import colorlog
